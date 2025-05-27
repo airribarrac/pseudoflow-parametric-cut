@@ -394,7 +394,7 @@ writeOutput
 
             if(!first)
                 fprintf(f, "\n");
-            fprintf(f, "%lf : ", clam);
+            fprintf(f, "l %lf ", clam);
             clambda = clam;
             first = 0;
         }
