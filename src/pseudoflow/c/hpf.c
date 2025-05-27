@@ -96,6 +96,24 @@
 #include "stdlib.h"
 #include "../core/libhpf.h"
 
+typedef struct nodeBreakpoint
+{
+    double lambda;
+    uint node;
+
+
+}ndb;
+
+int cmp_ndb(const void *lp, const void *rp){
+    const ndb *l = (const ndb*) lp;
+    const ndb *r = (const ndb*) rp;
+
+    if ( l->lambda < r->lambda ) return -1;
+    if ( l->lambda > r->lambda ) return 1;
+
+    return l->node - r->node;
+}
+
 static void readData(char *filename, int* numNodes, int* numArcs, int *source, int *sink,
 	double ** arcMatrixPointer, double lambdaRange[2], int * roundNegativeCapacity)
 /*************************************************************************
@@ -334,7 +352,9 @@ writeOutput
 	fprintf(f, "p %d\n", numBreakpoints);
 
 	/* print lambda values */
+    /*
 	fprintf(f, "l ");
+
 	for (i = 0; i < numBreakpoints; i++)
 	{
 		fprintf(f, "%.15lf", breakpoints[i]);
@@ -346,15 +366,56 @@ writeOutput
 		{
 			fprintf(f, "\n");
 		}
+	}*/
+
+    ndb *brarr;
+    if ((brarr= (ndb *)malloc(numNodes *  sizeof(ndb))) == NULL)
+    {
+        printf("Could not allocate memory.\n");
+        exit(0);
+    }
+
+	for (i = 0; i < numNodes; i++)
+	{
+        brarr[i].lambda = cuts[i];
+        brarr[i].node = i;
 	}
 
-	/* print values nodes*/
+
+    qsort(brarr, numNodes, sizeof(ndb), cmp_ndb);
+    double clambda = breakpoints[0] -10.0;
+    int first = 1;
 	for (i = 0; i < numNodes; i++)
+	{
+        int node = brarr[i].node;
+        double clam = brarr[i].lambda;
+
+        if ( clam != clambda ){
+
+            if(!first)
+                fprintf(f, "\n");
+            fprintf(f, "l %lf ", clam);
+            clambda = clam;
+            first = 0;
+        }
+
+		//fprintf(f, "n %d ",i);
+		fprintf(f, "%d ", node);
+
+	}
+
+    free(brarr);
+
+
+
+	/* print values nodes*/
+	/*for (i = 0; i < numNodes; i++)
 	{
 		fprintf(f, "n %d ",i);
 		fprintf(f, "%lf\n", cuts[i]);
 
 	}
+    */
 
 	// close output file
 	fclose(f);
